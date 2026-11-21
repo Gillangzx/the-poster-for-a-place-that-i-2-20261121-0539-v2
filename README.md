@@ -1,31 +1,26 @@
-# QUARROW VALE
+# SABLEMERE — a travel poster for a place that isn't there
 
 [![make.fun · the-poster-for-a-place-that-i-2-20261121-0539](https://make.fun/badge/the-poster-for-a-place-that-i-2-20261121-0539.svg)](https://make.fun/bounty/the-poster-for-a-place-that-i-2-20261121-0539?utm_source=github&utm_medium=readme&utm_campaign=the-poster-for-a-place-that-i-2-20261121-0539)
-[![make.fun · Gillangzx/the-poster-for-a-place-that-i-2-20261121-0539-v2 rank](https://make.fun/Gillangzx/the-poster-for-a-place-that-i-2-20261121-0539-v2/rank.svg)](https://make.fun/bounty/the-poster-for-a-place-that-i-2-20261121-0539/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=the-poster-for-a-place-that-i-2-20261121-0539)
-[![make.fun · Gillangzx/the-poster-for-a-place-that-i-2-20261121-0539-v2 reward](https://make.fun/Gillangzx/the-poster-for-a-place-that-i-2-20261121-0539-v2/reward.svg)](https://make.fun/bounty/the-poster-for-a-place-that-i-2-20261121-0539/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=the-poster-for-a-place-that-i-2-20261121-0539)
+[![rank](https://make.fun/Gillangzx/the-poster-for-a-place-that-i-2-20261121-0539-v2/rank.svg)](https://make.fun/bounty/the-poster-for-a-place-that-i-2-20261121-0539/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=the-poster-for-a-place-that-i-2-20261121-0539)
+[![reward](https://make.fun/Gillangzx/the-poster-for-a-place-that-i-2-20261121-0539-v2/reward.svg)](https://make.fun/bounty/the-poster-for-a-place-that-i-2-20261121-0539/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=the-poster-for-a-place-that-i-2-20261121-0539)
 
-A travel poster for a place that isn't there: QUARROW VALE, a fog-drowned
-highland valley of slate roofs and sheep tracks, crossed by a ruined
-irrigation viaduct. The landmark is the Heron Span — one broken aqueduct
-arch with a warm lantern hanging in the gap — lit by a low dawn sun raking
-through the arches from the left. Three ridges fade paler into the mist
-behind it, and a wet slate ledge with ferns, a goat and a rope post anchors
-the foreground, so the valley reads in layers instead of as one flat scene.
+SABLEMERE is a moonlit valley that doesn't exist: two steep valleys, one foggy
+cobbled road winding between them, a hooded traveller with a lantern, glowing
+mushrooms, standing stones, cottages with warm windows, and an owl watching
+from a bare branch. The poster is the road itself — the promise of a walk
+through the mist.
 
 ## How it runs
 
-The poster is drawn once by hand in `render.py` (Pillow, standard library
-plus Pillow only) and committed here as `entry.png`. The entrypoint
-`main.ts` (Node 22, standard library only) copies that committed image to
-the output directory:
+`render.py` composites `entry.png` from the realistic base scene in `base.png`:
+it scales the scene to poster width, sets the name SABLEMERE across the top in
+a large pale serif with a thin gold rule beneath it, then adds a soft vignette
+and a whisper of film grain so title and scene read as one poster. It saves
+the result as a PNG inside the 1 MiB entry cap.
 
-```sh
-node main.ts
-```
-
-It reads `entry.png` from next to the script, then the working directory,
-then `/bot`, writes it to `$MAKEFUN_OUTPUT_DIR` (falling back to
-`/output`), and verifies the output is a non-empty PNG before it exits.
+`main.ts` (Node 22, standard library only) copies the committed `entry.png`
+into the output directory (`$MAKEFUN_OUTPUT_DIR`, falling back to `/output`)
+and checks the PNG magic bytes before it finishes.
 
 ## License
 

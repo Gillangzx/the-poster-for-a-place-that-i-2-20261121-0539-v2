@@ -1,59 +1,80 @@
-// QUARROW VALE — entrypoint: copies the committed poster to the output directory.
-import { copyFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+// SABLEMERE — poster entrypoint.
+//
+// Copies the committed entry.png into the output directory the harness asks
+// for ($MAKEFUN_OUTPUT_DIR, or /output when it is not set). Standard library
+// only; no network, no dependencies.
+
+import { copyFile, mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
-function fail(message: string): never {
-  console.error(`quarrow-vale: ${message}`);
-  process.exit(1);
+function scriptDir() {
+  return dirname(fileURLToPath(import.meta.url));
 }
 
-function candidates(): string[] {
-  const here = dirname(fileURLToPath(import.meta.url));
-  return [join(here, "entry.png"), join(process.cwd(), "entry.png"), "/bot/entry.png"];
+function candidates() {
+  return [
+    join(scriptDir(), "entry.png"),
+    join(process.cwd(), "entry.png"),
+    "/bot/entry.png",
+  ];
 }
 
-function findSource(): string {
-  for (const p of candidates()) {
-    try {
-      if (existsSync(p) && statSync(p).isFile() && statSync(p).size > 0) return p;
-    } catch {
-      // keep looking
-    }
-  }
-  fail("entry.png not found next to the script, in the working directory, or in /bot");
+function outputDir() {
+  return process.env.MAKEFUN_OUTPUT_DIR || "/output";
 }
 
-function checkPng(path: string): void {
-  const head = readFileSync(path).subarray(0, 8);
-  if (!head.equals(PNG_MAGIC)) fail(`${path} is not a PNG file`);
-}
-
-function main(): void {
-  const outDir = process.env.MAKEFUN_OUTPUT_DIR ?? "/output";
-  const src = findSource();
-  checkPng(src);
-  mkdirSync(outDir, { recursive: true });
-  const dest = join(outDir, "entry.png");
+async function looksLikePng(path) {
   try {
-    copyFileSync(src, dest);
+    const head = await readFile(path, { flag: "r" });
+    return head.subarray(0, PNG_MAGIC.length).equals(PNG_MAGIC);
   } catch {
-    // one read/write round-trip retry before giving up
-    try {
-      writeFileSync(dest, readFileSync(src));
-    } catch (err) {
-      fail(`could not copy entry.png to ${dest}: ${err}`);
-    }
+    return false;
   }
-  try {
-    checkPng(dest);
-    if (statSync(dest).size === 0) fail("output entry.png is empty");
-  } catch (err) {
-    fail(`output verification failed: ${err}`);
-  }
-  console.log(`quarrow-vale: wrote ${resolve(dest)}`);
 }
 
-main();
+async function main() {
+  const destDir = resolve(outputDir());
+  await mkdir(destDir, { recursive: true });
+  const dest = join(destDir, "entry.png");
+
+  let source = null;
+  for (const path of candidates()) {
+    try {
+      const info = await stat(path);
+      if (info.isFile() && info.size > 0) {
+        source = path;
+        break;
+      }
+    } catch {
+      // Not here; try the next location.
+    }
+  }
+  if (source === null) {
+    throw new Error("entry.png not found next to main.ts, in the cwd, or in /bot");
+  }
+
+  try {
+    await copyFile(source, dest);
+  } catch (err) {
+    // One retry through a plain read/write round-trip.
+    const data = await readFile(source);
+    await writeFile(dest, data);
+    if (err) {
+      // The first attempt failed; the round-trip above is the recovery.
+    }
+  }
+
+  if (!(await looksLikePng(dest))) {
+    throw new Error("output is not a PNG (bad magic bytes)");
+  }
+  const info = await stat(dest);
+  console.log(`wrote ${dest} (${info.size} bytes)`);
+}
+
+main().catch((err) => {
+  console.error(err.message);
+  process.exit(1);
+});
