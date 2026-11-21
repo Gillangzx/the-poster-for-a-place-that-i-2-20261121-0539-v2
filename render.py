@@ -55,6 +55,18 @@ def draw_gold_rule(canvas, left, right, y):
     pen.ellipse([mid - 4, y - 4, mid + 4, y + 4], fill=RULE_GOLD)
 
 
+def add_title_band(img, height=180, top_alpha=110):
+    """Dark gradient behind the title, fading to nothing, so the name stays
+    crisp even where the moon sits behind the middle letters."""
+    w, _ = img.size
+    ramp = Image.new("L", (1, height))
+    ramp.putdata([round(top_alpha * (1 - y / height)) for y in range(height)])
+    ramp = ramp.resize((w, height))
+    tint = Image.new("RGBA", (w, height), (8, 10, 18, 255))
+    img.paste(tint, (0, 0), ramp)
+    return img
+
+
 def soften_edges(img):
     """Darken the corners gently so the eye stays on the road and the moon."""
     w, h = img.size
@@ -97,13 +109,14 @@ def main():
     scene = Image.open(BASE_PATH).convert("RGB")
     poster = fit_to_width(scene, TARGET_WIDTH)
     poster = poster.convert("RGBA")
+    poster = add_title_band(poster)
 
     font = ImageFont.truetype(SERIF, TITLE_SIZE)
     left, right = draw_spaced_title(poster, TITLE, font, top=36)
     draw_gold_rule(poster, left, right, y=36 + TITLE_SIZE + 18)
 
     poster = soften_edges(poster)
-    poster = add_grain(poster.convert("RGB"))
+    poster = add_grain(poster.convert("RGB"), strength=0.07)
 
     size = save_under_cap(poster, OUT_PATH)
     print(f"wrote {OUT_PATH}: {poster.size[0]}x{poster.size[1]}, {size} bytes")
